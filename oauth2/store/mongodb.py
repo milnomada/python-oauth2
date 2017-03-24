@@ -74,6 +74,26 @@ class AccessTokenStore(AccessTokenStore, MongodbStore):
                            scopes=data.get("scopes"),
                            user_id=data.get("user_id"))
 
+    def check_token_of_user(self, token, grant_type, user_id):
+        data = self.collection.find_one({"token": token,
+                                         "grant_type": grant_type,
+                                         "user_id": user_id},
+                                        sort=[("expires_at",
+                                               pymongo.DESCENDING)])
+
+        if data is None:
+            raise AccessTokenNotFound
+
+        return AccessToken(client_id=data.get("client_id"),
+                           grant_type=data.get("grant_type"),
+                           token=data.get("token"),
+                           data=data.get("data"),
+                           expires_at=data.get("expires_at"),
+                           refresh_token=data.get("refresh_token"),
+                           refresh_expires_at=data.get("refresh_expires_at"),
+                           scopes=data.get("scopes"),
+                           user_id=data.get("user_id"))
+
     def save_token(self, access_token):
         self.collection.insert({
             "client_id": access_token.client_id,
